@@ -1,3 +1,4 @@
+import base64
 import dagster as dg
 import matplotlib.pyplot as plt
 
@@ -17,7 +18,7 @@ class AdhocRequestConfig(dg.Config):
     group_name='ad_hoc',
     deps=['taxi_zones', 'taxi_trips']
 )
-def adhoc_request(config: AdhocRequestConfig, duckdb_res: DuckDBResource) -> None:
+def adhoc_request(config: AdhocRequestConfig, duckdb_res: DuckDBResource) -> dg.MaterializeResult:
     """
       The response to an request made in the `requests` directory.
       See `requests/README.md` for more information.
@@ -73,3 +74,13 @@ def adhoc_request(config: AdhocRequestConfig, duckdb_res: DuckDBResource) -> Non
     
     plt.savefig(file_path)
     plt.close(fig)
+
+    with open(file_path, 'rb') as img:
+        image_data = img.read()
+    base64_data = base64.b64encode(image_data).decode('utf-8')
+    md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
+    return dg.MaterializeResult(
+        metadata={
+            'preview': dg.MetadataValue.md(md_content)
+        }
+    )
